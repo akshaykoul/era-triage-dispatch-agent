@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>62.0</apiVersion>
+    <apiVersion>66.0</apiVersion>
     <label>ERA Create Booking</label>
     <processType>AutoLaunchedFlow</processType>
     <status>Active</status>
+
     <variables>
         <name>MemberId</name><dataType>String</dataType><isInput>true</isInput><isOutput>false</isOutput>
     </variables>
@@ -17,19 +18,7 @@
         <name>HotelAddress</name><dataType>String</dataType><isInput>true</isInput><isOutput>false</isOutput>
     </variables>
     <variables>
-        <name>CheckIn</name><dataType>Date</dataType><isInput>true</isInput><isOutput>false</isOutput>
-    </variables>
-    <variables>
-        <name>CheckOut</name><dataType>Date</dataType><isInput>true</isInput><isOutput>false</isOutput>
-    </variables>
-    <variables>
-        <name>Rooms</name><dataType>Number</dataType><isInput>true</isInput><isOutput>false</isOutput><scale>0</scale>
-    </variables>
-    <variables>
-        <name>NightlyRate</name><dataType>Currency</dataType><isInput>true</isInput><isOutput>false</isOutput><scale>2</scale>
-    </variables>
-    <variables>
-        <name>PolicyAllowance</name><dataType>Currency</dataType><isInput>true</isInput><isOutput>false</isOutput><scale>2</scale>
+        <name>NightlyRate</name><dataType>String</dataType><isInput>true</isInput><isOutput>false</isOutput>
     </variables>
     <variables>
         <name>BookingId</name><dataType>String</dataType><isInput>false</isInput><isOutput>true</isOutput>
@@ -37,11 +26,23 @@
     <variables>
         <name>BookingName</name><dataType>String</dataType><isInput>false</isInput><isOutput>true</isOutput>
     </variables>
+
+    <formulas>
+        <name>TodayDate</name>
+        <dataType>Date</dataType>
+        <expression>TODAY()</expression>
+    </formulas>
+    <formulas>
+        <name>TomorrowDate</name>
+        <dataType>Date</dataType>
+        <expression>TODAY() + 1</expression>
+    </formulas>
+
     <recordCreates>
         <name>Create_Booking</name>
         <label>Create Booking</label>
         <locationX>176</locationX><locationY>134</locationY>
-        <connector><targetReference>Set_Booking_Outputs</targetReference></connector>
+        <connector><targetReference>Get_Booking_Name</targetReference></connector>
         <inputAssignments>
             <field>Member__c</field><value><elementReference>MemberId</elementReference></value>
         </inputAssignments>
@@ -55,19 +56,16 @@
             <field>Hotel_Address__c</field><value><elementReference>HotelAddress</elementReference></value>
         </inputAssignments>
         <inputAssignments>
-            <field>Check_In__c</field><value><elementReference>CheckIn</elementReference></value>
+            <field>Check_In__c</field><value><elementReference>TodayDate</elementReference></value>
         </inputAssignments>
         <inputAssignments>
-            <field>Check_Out__c</field><value><elementReference>CheckOut</elementReference></value>
+            <field>Check_Out__c</field><value><elementReference>TomorrowDate</elementReference></value>
         </inputAssignments>
         <inputAssignments>
-            <field>Rooms__c</field><value><elementReference>Rooms</elementReference></value>
+            <field>Rooms__c</field><value><numberValue>1</numberValue></value>
         </inputAssignments>
         <inputAssignments>
-            <field>Nightly_Rate__c</field><value><elementReference>NightlyRate</elementReference></value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>Policy_Allowance__c</field><value><elementReference>PolicyAllowance</elementReference></value>
+            <field>Policy_Allowance__c</field><value><numberValue>170</numberValue></value>
         </inputAssignments>
         <inputAssignments>
             <field>Booking_Status__c</field><value><stringValue>Confirmed</stringValue></value>
@@ -75,15 +73,37 @@
         <object>ERA_Accommodation_Booking__c</object>
         <storeOutputAutomatically>true</storeOutputAutomatically>
     </recordCreates>
+
+    <recordLookups>
+        <name>Get_Booking_Name</name>
+        <label>Get Booking Name</label>
+        <locationX>176</locationX><locationY>242</locationY>
+        <connector><targetReference>Set_Booking_Outputs</targetReference></connector>
+        <filterLogic>1</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>Create_Booking</elementReference></value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>ERA_Accommodation_Booking__c</object>
+        <outputAssignments>
+            <assignToReference>BookingName</assignToReference>
+            <field>Name</field>
+        </outputAssignments>
+    </recordLookups>
+
     <assignments>
         <name>Set_Booking_Outputs</name>
         <label>Set Booking Outputs</label>
-        <locationX>176</locationX><locationY>242</locationY>
+        <locationX>176</locationX><locationY>350</locationY>
         <assignmentItems>
-            <assignToReference>BookingId</assignToReference><operator>Assign</operator>
+            <assignToReference>BookingId</assignToReference>
+            <operator>Assign</operator>
             <value><elementReference>Create_Booking</elementReference></value>
         </assignmentItems>
     </assignments>
+
     <start>
         <locationX>50</locationX><locationY>0</locationY>
         <connector><targetReference>Create_Booking</targetReference></connector>

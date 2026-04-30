@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>62.0</apiVersion>
+    <apiVersion>66.0</apiVersion>
     <label>ERA Create Dispatch</label>
     <processType>AutoLaunchedFlow</processType>
     <status>Active</status>
+
     <variables>
         <name>MemberId</name><dataType>String</dataType><isInput>true</isInput><isOutput>false</isOutput>
     </variables>
@@ -46,11 +47,12 @@
     <variables>
         <name>DispatchName</name><dataType>String</dataType><isInput>false</isInput><isOutput>true</isOutput>
     </variables>
+
     <recordCreates>
         <name>Create_Dispatch</name>
         <label>Create Dispatch</label>
         <locationX>176</locationX><locationY>134</locationY>
-        <connector><targetReference>Set_Dispatch_Outputs</targetReference></connector>
+        <connector><targetReference>Get_Dispatch_Name</targetReference></connector>
         <inputAssignments>
             <field>Member__c</field><value><elementReference>MemberId</elementReference></value>
         </inputAssignments>
@@ -93,15 +95,37 @@
         <object>ERA_Dispatch__c</object>
         <storeOutputAutomatically>true</storeOutputAutomatically>
     </recordCreates>
+
+    <recordLookups>
+        <name>Get_Dispatch_Name</name>
+        <label>Get Dispatch Name</label>
+        <locationX>176</locationX><locationY>242</locationY>
+        <connector><targetReference>Set_Dispatch_Outputs</targetReference></connector>
+        <filterLogic>1</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>Create_Dispatch</elementReference></value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>ERA_Dispatch__c</object>
+        <outputAssignments>
+            <assignToReference>DispatchName</assignToReference>
+            <field>Name</field>
+        </outputAssignments>
+    </recordLookups>
+
     <assignments>
         <name>Set_Dispatch_Outputs</name>
         <label>Set Dispatch Outputs</label>
-        <locationX>176</locationX><locationY>242</locationY>
+        <locationX>176</locationX><locationY>350</locationY>
         <assignmentItems>
-            <assignToReference>DispatchId</assignToReference><operator>Assign</operator>
+            <assignToReference>DispatchId</assignToReference>
+            <operator>Assign</operator>
             <value><elementReference>Create_Dispatch</elementReference></value>
         </assignmentItems>
     </assignments>
+
     <start>
         <locationX>50</locationX><locationY>0</locationY>
         <connector><targetReference>Create_Dispatch</targetReference></connector>

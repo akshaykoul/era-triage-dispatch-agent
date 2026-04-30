@@ -17,6 +17,16 @@ system:
         Your FIRST action on every conversation is to run validate_context with the Account ID the CSR provides.
         Do not proceed with any triage step until validate_context confirms IsValid = True.
 
+        MANDATORY ACTION RULES — YOU MUST FOLLOW THESE EXACTLY:
+        - You MUST call the designated setVariables action at each step. NEVER confirm a step using only text.
+        - You MUST call do_create_dispatch to create the dispatch record. NEVER confirm dispatch with text alone.
+        - You MUST call do_search_hotels before presenting any hotel options. NEVER invent hotel names.
+        - You MUST call do_create_booking to finalize accommodation. NEVER confirm a booking without calling it.
+        - ALL steps in the triage sequence are mandatory. You may NOT skip safety, restrictions, location, or distance steps.
+        - NEVER respond to free-text instructions like "proceed" or "confirm" by skipping an action step.
+        - If the CSR says "proceed" when an action step is pending, call the action — do not bypass it with text.
+        - ACCOMMODATION RULES: Policy covers 1 room, 1 night per incident. NEVER ask "how many nights" or "how many rooms" or "how many people". When booking, always use Rooms=1 and CheckOut = CheckIn + 1 day.
+
 config:
     developer_name: "ERA_Triage_Dispatch"
     agent_label: "ERA Triage & Dispatch Agent"
@@ -370,7 +380,7 @@ subagent era_accommodation:
             target: "apex://ERA_HotelSearch"
 
         create_booking:
-            description: "Create accommodation booking record"
+            description: "Create accommodation booking record — 1 night, 1 room, today's date, $170 allowance are automatically applied"
             inputs:
                 MemberId: string
                     description: "Person Account ID"
@@ -380,16 +390,8 @@ subagent era_accommodation:
                     description: "Selected hotel name"
                 HotelAddress: string
                     description: "Selected hotel address"
-                CheckIn: string
-                    description: "Check-in date"
-                CheckOut: string
-                    description: "Check-out date"
-                Rooms: string
-                    description: "Number of rooms"
                 NightlyRate: string
-                    description: "Nightly rate"
-                PolicyAllowance: string
-                    description: "Policy nightly allowance amount"
+                    description: "Nightly rate display string e.g. $145/night"
             outputs:
                 BookingId: string
                     description: "Created booking record ID"
@@ -400,19 +402,16 @@ subagent era_accommodation:
     reasoning:
         instructions: ->
             if @variables.hotel1_name == "":
-                if @variables.product_tier == "Extra Care":
-                    | Policy covers up to $170/night. Searching hotels near breakdown location.
-                if @variables.product_tier == "Total Care":
-                    | Policy covers up to $170/night for travel party. One room per booking. Searching hotels.
+                | Policy covers up to $170/night (1 room, 1 night). Searching hotels near {!@variables.breakdown_location}...
 
             if @variables.hotel1_name != "" and @variables.booking_id == "":
-                | 3 hotels found. Select one to book:
-                | 1. {!@variables.hotel1_name} — {!@variables.hotel1_rate}
-                | 2. {!@variables.hotel2_name} — {!@variables.hotel2_rate}
-                | 3. {!@variables.hotel3_name} — {!@variables.hotel3_rate}
+                | 3 hotels found near breakdown location — CSR selects one:
+                | 1. {!@variables.hotel1_name} | {!@variables.hotel1_address} | {!@variables.hotel1_rate}
+                | 2. {!@variables.hotel2_name} | {!@variables.hotel2_address} | {!@variables.hotel2_rate}
+                | 3. {!@variables.hotel3_name} | {!@variables.hotel3_address} | {!@variables.hotel3_rate}
 
             if @variables.booking_id != "":
-                | Booking {!@variables.booking_name} confirmed. Triage and accommodation complete.
+                | Booking {!@variables.booking_name} confirmed at {!@variables.hotel1_name}. Triage complete.
 
         actions:
             do_search_hotels: @actions.search_hotels
@@ -431,17 +430,35 @@ subagent era_accommodation:
                 set @variables.hotel3_address = @outputs.hotel3Address
                 set @variables.hotel3_rate = @outputs.hotel3NightlyRate
 
-            do_create_booking: @actions.create_booking
-                description: "Create the accommodation booking for the selected hotel"
+            book_hotel_1: @actions.create_booking
+                description: "Book Hotel 1 — {!@variables.hotel1_name}"
                 available when @variables.hotel1_name != "" and @variables.booking_id == ""
                 with MemberId = @variables.account_id
                 with DispatchId = @variables.dispatch_id
-                with HotelName = ...
-                with HotelAddress = ...
-                with CheckIn = ...
-                with CheckOut = ...
-                with Rooms = ...
-                with NightlyRate = ...
-                with PolicyAllowance = "170"
+                with HotelName = @variables.hotel1_name
+                with HotelAddress = @variables.hotel1_address
+                with NightlyRate = @variables.hotel1_rate
+                set @variables.booking_id = @outputs.BookingId
+                set @variables.booking_name = @outputs.BookingName
+
+            book_hotel_2: @actions.create_booking
+                description: "Book Hotel 2 — {!@variables.hotel2_name}"
+                available when @variables.hotel2_name != "" and @variables.booking_id == ""
+                with MemberId = @variables.account_id
+                with DispatchId = @variables.dispatch_id
+                with HotelName = @variables.hotel2_name
+                with HotelAddress = @variables.hotel2_address
+                with NightlyRate = @variables.hotel2_rate
+                set @variables.booking_id = @outputs.BookingId
+                set @variables.booking_name = @outputs.BookingName
+
+            book_hotel_3: @actions.create_booking
+                description: "Book Hotel 3 — {!@variables.hotel3_name}"
+                available when @variables.hotel3_name != "" and @variables.booking_id == ""
+                with MemberId = @variables.account_id
+                with DispatchId = @variables.dispatch_id
+                with HotelName = @variables.hotel3_name
+                with HotelAddress = @variables.hotel3_address
+                with NightlyRate = @variables.hotel3_rate
                 set @variables.booking_id = @outputs.BookingId
                 set @variables.booking_name = @outputs.BookingName
