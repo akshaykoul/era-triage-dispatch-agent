@@ -24,10 +24,11 @@ config:
 
 variables:
     account_id: linked string
-        source: @session.recordId
+        source: @MessagingEndUser.ContactId
         description: "Person Account ID from OmniChannel context"
     member_name: mutable string = ""
     policy_number: mutable string = ""
+    policy_summary: mutable string = ""
     product_tier: mutable string = ""
     vehicle_id: mutable string = ""
     vehicle_make: mutable string = ""
@@ -73,18 +74,16 @@ subagent era_triage:
 
     actions:
         lookup_policy:
-            description: "Fetch member policy and tier from existing flow"
+            description: "Fetch member policy summary and count for the member"
             inputs:
-                recordId: string
+                AccountId: string
                     description: "Person Account ID"
             outputs:
-                policyNumber: string
-                    description: "Policy number"
-                productTier: string
-                    description: "ERA product tier: Total Care / Extra Care / Roadside Care"
-                memberName: string
-                    description: "Member full name"
-            target: "flow://Query_Insurance_Policies_V4"
+                PoliciesFound: string
+                    description: "Text summary of policies found for the member"
+                TotalPolicies: number
+                    description: "Number of policies found"
+            target: "flow://Query_Insurance_Policies"
 
         get_vehicle:
             description: "Fetch vehicle on file for the member"
@@ -147,11 +146,15 @@ subagent era_triage:
                 | Fetching member policy...
                 set @variables.policy_lookup_done = True
 
-            # Step 2: Show verified member and policy
-            if @variables.member_name != "" and @variables.vehicle_id == "":
-                | Member: {!@variables.member_name} — {!@variables.product_tier}. Fetching vehicle details.
+            # Step 2: Show policy summary — CSR confirms tier
+            if @variables.policy_summary != "" and @variables.product_tier == "":
+                | Policy: {!@variables.policy_summary}. Confirm tier: Total Care, Extra Care, or Roadside Care?
 
-            # Step 3: Vehicle confirmed — move to fault
+            # Step 3: Show verified policy and fetch vehicle
+            if @variables.product_tier != "" and @variables.vehicle_id == "":
+                | Tier confirmed: {!@variables.product_tier}. Fetching vehicle details.
+
+            # Step 4: Vehicle confirmed — move to fault
             if @variables.vehicle_confirmed == True and @variables.fault_type == "":
                 | Vehicle confirmed. What is the fault type?
 
@@ -196,27 +199,27 @@ subagent era_triage:
 
             if @variables.triage_complete == True:
                 if @variables.product_tier == "Roadside Care":
-                    @utils.transition to @subagent.era_no_accommodation
-                        description: "Roadside Care — no accommodation"
+                    transition to @subagent.era_no_accommodation
                 if @variables.product_tier != "Roadside Care" and @variables.distance_from_home == "Under 100km":
-                    @utils.transition to @subagent.era_no_accommodation
-                        description: "Under 100km — no accommodation"
+                    transition to @subagent.era_no_accommodation
                 if @variables.product_tier != "Roadside Care" and @variables.distance_from_home == "Over 100km":
-                    @utils.transition to @subagent.era_accommodation
-                        description: "Eligible for accommodation"
+                    transition to @subagent.era_accommodation
 
         actions:
             do_policy_lookup: @actions.lookup_policy
                 description: "Look up member policy"
                 available when @variables.policy_lookup_done == False
-                with recordId = @variables.account_id
-                set @variables.member_name = @outputs.memberName
-                set @variables.policy_number = @outputs.policyNumber
-                set @variables.product_tier = @outputs.productTier
+                with AccountId = @variables.account_id
+                set @variables.policy_summary = @outputs.PoliciesFound
+
+            set_product_tier: @utils.setVariables
+                description: "CSR confirmed ERA product tier from policy summary"
+                available when @variables.policy_summary != "" and @variables.product_tier == ""
+                with product_tier = ...
 
             do_get_vehicle: @actions.get_vehicle
                 description: "Get vehicle on file"
-                available when @variables.member_name != "" and @variables.vehicle_id == ""
+                available when @variables.product_tier != "" and @variables.vehicle_id == ""
                 with AccountId = @variables.account_id
                 set @variables.vehicle_id = @outputs.VehicleId
                 set @variables.vehicle_make = @outputs.VehicleMake
