@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Member__c</fullName><label>Member</label>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>ERA Accommodation Bookings</relationshipLabel>
+    <relationshipName>ERA_Accommodation_Bookings</relationshipName>
+    <required>true</required><type>Lookup</type>
+</CustomField>

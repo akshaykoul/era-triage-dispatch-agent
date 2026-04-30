@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Dispatch__c</fullName><label>Dispatch</label>
+    <referenceTo>ERA_Dispatch__c</referenceTo>
+    <relationshipLabel>Accommodation Bookings</relationshipLabel>
+    <relationshipName>Accommodation_Bookings</relationshipName>
+    <required>false</required><type>Lookup</type>
+</CustomField>

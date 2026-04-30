@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Nightly_Rate__c</fullName><label>Nightly Rate</label>
+    <precision>8</precision><scale>2</scale><required>false</required><type>Currency</type>
+</CustomField>
