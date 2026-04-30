@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Vehicle_Type__c</fullName>
+    <label>Vehicle Type</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Car</fullName><default>true</default><label>Car</label></value>
+            <value><fullName>Motorcycle</fullName><default>false</default><label>Motorcycle</label></value>
+            <value><fullName>EV</fullName><default>false</default><label>EV</label></value>
+            <value><fullName>Caravan</fullName><default>false</default><label>Caravan</label></value>
+            <value><fullName>Trailer</fullName><default>false</default><label>Trailer</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
