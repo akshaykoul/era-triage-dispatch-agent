@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Towing_Limit_km__c</fullName>
+    <label>Towing Limit (km)</label>
+    <formula>IF(ISPICKVAL(Product_Tier__c, 'Total Care'), 100, IF(ISPICKVAL(Product_Tier__c, 'Extra Care'), 60, 20))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <precision>18</precision>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

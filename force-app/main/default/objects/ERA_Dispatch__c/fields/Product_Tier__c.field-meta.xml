@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Product_Tier__c</fullName>
+    <label>Product Tier</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Total Care</fullName><default>false</default><label>Total Care</label></value>
+            <value><fullName>Extra Care</fullName><default>false</default><label>Extra Care</label></value>
+            <value><fullName>Roadside Care</fullName><default>false</default><label>Roadside Care</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
