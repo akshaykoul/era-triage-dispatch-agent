@@ -3,7 +3,7 @@
 
 system:
     messages:
-        welcome: "ERA Triage ready."
+        welcome: "ERA Triage ready. Paste the member's Account ID to begin."
         error: "Something went wrong. Please try again."
     instructions: |
         You are an ERA Triage assistant for a contact center representative on a live call.
@@ -14,6 +14,8 @@ system:
         NEVER ask for member name, address, or identity — that is not your job.
         Only handle ERA breakdown triage and accommodation booking.
         If injuries or emergencies are reported, prompt the CSR to follow emergency escalation protocol.
+        Your FIRST action on every conversation is to run validate_context with the Account ID the CSR provides.
+        Do not proceed with any triage step until validate_context confirms IsValid = True.
 
 config:
     developer_name: "ERA_Triage_Dispatch"
@@ -23,6 +25,8 @@ config:
 
 variables:
     account_id: mutable string = ""
+    context_validated: mutable boolean = False
+    member_name: mutable string = ""
     policy_number: mutable string = ""
     policy_summary: mutable string = ""
     product_tier: mutable string = ""
@@ -68,21 +72,25 @@ subagent era_triage:
     description: "ERA breakdown triage — collect all incident details and create dispatch record"
 
     actions:
-        lookup_policy:
-            description: "Fetch member ERA policy number, name, and tier from Salesforce"
+        validate_context:
+            description: "Validate Account ID is a Person Account with an active ERA policy. Returns member name, policy number, tier, and validation message."
             inputs:
                 AccountId: string
-                    description: "Person Account ID"
+                    description: "Person Account ID to validate"
             outputs:
+                IsValid: boolean
+                    description: "True if valid Person Account with active ERA policy"
+                MemberName: string
+                    description: "Member full name"
                 PolicyNumber: string
-                    description: "Policy number e.g. PN-70307"
+                    description: "ERA policy number"
                 PolicyName: string
-                    description: "Full policy name e.g. RACV Total Care - Emergency Roadside Assistance"
+                    description: "Full ERA policy name"
                 ProductTier: string
                     description: "Derived ERA tier: Total Care / Extra Care / Roadside Care / Not Found"
-                PolicyFound: boolean
-                    description: "Whether an active ERA policy was found"
-            target: "flow://ERA_Lookup_Policy"
+                ValidationMessage: string
+                    description: "Human-readable confirmation or error message"
+            target: "flow://ERA_Validate_Context"
 
         get_vehicle:
             description: "Fetch the member's vehicle on file"
@@ -141,15 +149,18 @@ subagent era_triage:
     reasoning:
         instructions: ->
             if @variables.account_id == "":
-                | Enter the member Account ID from the record page to begin.
+                | Paste the member Account ID from the record page to begin.
 
-            if @variables.account_id != "" and @variables.policy_summary == "":
-                | Looking up ERA policy — one moment.
+            if @variables.account_id != "" and @variables.context_validated == False:
+                | Validating member context — one moment.
 
-            if @variables.policy_summary != "" and @variables.product_tier == "Not Found":
-                | No active ERA policy found for this member. Confirm coverage manually or end call.
+            if @variables.context_validated == True and @variables.policy_summary == "Not Found":
+                | No active ERA policy for {!@variables.member_name}. Confirm coverage manually or end call.
 
-            if @variables.product_tier != "" and @variables.product_tier != "Not Found" and @variables.vehicle_id == "" and @variables.vehicle_confirmed == False:
+            if @variables.context_validated == True and @variables.product_tier != "" and @variables.product_tier != "Not Found" and @variables.policy_summary == "":
+                | Validated: {!@variables.member_name} — {!@variables.product_tier} ({!@variables.policy_number}). Fetching vehicle on file.
+
+            if @variables.context_validated == True and @variables.policy_summary != "" and @variables.vehicle_id == "" and @variables.vehicle_confirmed == False:
                 | Policy: {!@variables.policy_summary} ({!@variables.product_tier}). Fetching vehicle on file.
 
             if @variables.vehicle_id != "" and @variables.vehicle_confirmed == False:
@@ -196,21 +207,23 @@ subagent era_triage:
 
         actions:
             capture_account_id: @utils.setVariables
-                description: "Enter the member's Account ID from the record page"
+                description: "Paste the member Account ID from the record page"
                 available when @variables.account_id == ""
                 with account_id = ...
 
-            do_policy_lookup: @actions.lookup_policy
-                description: "Look up member ERA policy"
-                available when @variables.account_id != "" and @variables.policy_summary == ""
+            do_validate_context: @actions.validate_context
+                description: "Validate member Account ID and load policy context"
+                available when @variables.account_id != "" and @variables.context_validated == False
                 with AccountId = @variables.account_id
-                set @variables.policy_summary = @outputs.PolicyName
+                set @variables.context_validated = @outputs.IsValid
+                set @variables.member_name = @outputs.MemberName
                 set @variables.policy_number = @outputs.PolicyNumber
+                set @variables.policy_summary = @outputs.PolicyName
                 set @variables.product_tier = @outputs.ProductTier
 
             do_get_vehicle: @actions.get_vehicle
                 description: "Fetch vehicle on file for this member"
-                available when @variables.product_tier != "" and @variables.product_tier != "Not Found" and @variables.vehicle_id == ""
+                available when @variables.context_validated == True and @variables.product_tier != "Not Found" and @variables.vehicle_id == ""
                 with AccountId = @variables.account_id
                 set @variables.vehicle_id = @outputs.VehicleId
                 set @variables.vehicle_make = @outputs.VehicleMake

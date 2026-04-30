@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <description>Validates an Account ID is a Person Account with an active ERA policy. Returns member name, policy number, tier, and a validation message. Run automatically on agent start using page record context.</description>
+    <interviewLabel>ERA Validate Context {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>ERA Validate Context</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value><stringValue>LightningFlowBuilder</stringValue></value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+
+    <variables>
+        <name>AccountId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>IsValid</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+        <value><booleanValue>false</booleanValue></value>
+    </variables>
+    <variables>
+        <name>MemberName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>PolicyNumber</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>PolicyName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>ProductTier</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>ValidationMessage</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+
+    <formulas>
+        <name>Build_Valid_Message</name>
+        <dataType>String</dataType>
+        <expression>"Member: " &amp; {!MemberName} &amp; " | Policy: " &amp; {!PolicyNumber} &amp; " | Tier: " &amp; {!ProductTier}</expression>
+    </formulas>
+
+    <recordLookups>
+        <name>Get_Account</name>
+        <label>Get Person Account</label>
+        <locationX>176</locationX>
+        <locationY>134</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Account_Found</targetReference>
+        </connector>
+        <filterLogic>1 AND 2</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>AccountId</elementReference></value>
+        </filters>
+        <filters>
+            <field>IsPersonAccount</field>
+            <operator>EqualTo</operator>
+            <value><booleanValue>true</booleanValue></value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Account</object>
+        <outputAssignments>
+            <assignToReference>MemberName</assignToReference>
+            <field>Name</field>
+        </outputAssignments>
+    </recordLookups>
+
+    <recordLookups>
+        <name>Get_ERA_Policy</name>
+        <label>Get ERA Policy</label>
+        <locationX>396</locationX>
+        <locationY>242</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Policy_Found</targetReference>
+        </connector>
+        <filterLogic>1 AND 2 AND 3</filterLogic>
+        <filters>
+            <field>NameInsuredId</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>AccountId</elementReference></value>
+        </filters>
+        <filters>
+            <field>Status</field>
+            <operator>EqualTo</operator>
+            <value><stringValue>In Force</stringValue></value>
+        </filters>
+        <filters>
+            <field>PolicyName</field>
+            <operator>Contains</operator>
+            <value><stringValue>Emergency Roadside</stringValue></value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>InsurancePolicy</object>
+        <outputAssignments>
+            <assignToReference>PolicyNumber</assignToReference>
+            <field>Name</field>
+        </outputAssignments>
+        <outputAssignments>
+            <assignToReference>PolicyName</assignToReference>
+            <field>PolicyName</field>
+        </outputAssignments>
+    </recordLookups>
+
+    <decisions>
+        <name>Check_Account_Found</name>
+        <label>Account Found?</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <defaultConnectorLabel>Not Found</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Set_Invalid_Account</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Account_Found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>MemberName</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>false</booleanValue></rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_ERA_Policy</targetReference>
+            </connector>
+            <label>Found</label>
+        </rules>
+    </decisions>
+
+    <decisions>
+        <name>Check_Policy_Found</name>
+        <label>ERA Policy Found?</label>
+        <locationX>396</locationX>
+        <locationY>350</locationY>
+        <defaultConnectorLabel>No Policy</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Set_No_Policy</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Policy_Found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>PolicyNumber</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>false</booleanValue></rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Derive_Tier</targetReference>
+            </connector>
+            <label>Found</label>
+        </rules>
+    </decisions>
+
+    <decisions>
+        <name>Derive_Tier</name>
+        <label>Derive ERA Tier</label>
+        <locationX>616</locationX>
+        <locationY>350</locationY>
+        <defaultConnectorLabel>Roadside Care</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Set_Roadside_Care</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Is_Total_Care</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>PolicyName</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue><stringValue>Total Care</stringValue></rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Total_Care</targetReference>
+            </connector>
+            <label>Total Care</label>
+        </rules>
+        <rules>
+            <name>Is_Extra_Care</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>PolicyName</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue><stringValue>Extra Care</stringValue></rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Extra_Care</targetReference>
+            </connector>
+            <label>Extra Care</label>
+        </rules>
+    </decisions>
+
+    <assignments>
+        <name>Set_Total_Care</name>
+        <label>Set Total Care</label>
+        <locationX>396</locationX>
+        <locationY>458</locationY>
+        <connector><targetReference>Set_Valid</targetReference></connector>
+        <assignmentItems>
+            <assignToReference>ProductTier</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>Total Care</stringValue></value>
+        </assignmentItems>
+    </assignments>
+
+    <assignments>
+        <name>Set_Extra_Care</name>
+        <label>Set Extra Care</label>
+        <locationX>616</locationX>
+        <locationY>458</locationY>
+        <connector><targetReference>Set_Valid</targetReference></connector>
+        <assignmentItems>
+            <assignToReference>ProductTier</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>Extra Care</stringValue></value>
+        </assignmentItems>
+    </assignments>
+
+    <assignments>
+        <name>Set_Roadside_Care</name>
+        <label>Set Roadside Care</label>
+        <locationX>836</locationX>
+        <locationY>458</locationY>
+        <connector><targetReference>Set_Valid</targetReference></connector>
+        <assignmentItems>
+            <assignToReference>ProductTier</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>Roadside Care</stringValue></value>
+        </assignmentItems>
+    </assignments>
+
+    <assignments>
+        <name>Set_Valid</name>
+        <label>Set Valid</label>
+        <locationX>616</locationX>
+        <locationY>566</locationY>
+        <assignmentItems>
+            <assignToReference>IsValid</assignToReference>
+            <operator>Assign</operator>
+            <value><booleanValue>true</booleanValue></value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>ValidationMessage</assignToReference>
+            <operator>Assign</operator>
+            <value><elementReference>Build_Valid_Message</elementReference></value>
+        </assignmentItems>
+    </assignments>
+
+    <assignments>
+        <name>Set_Invalid_Account</name>
+        <label>Set Invalid Account</label>
+        <locationX>176</locationX>
+        <locationY>350</locationY>
+        <assignmentItems>
+            <assignToReference>IsValid</assignToReference>
+            <operator>Assign</operator>
+            <value><booleanValue>false</booleanValue></value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>ValidationMessage</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>Account not found or not a Person Account. Please check the record.</stringValue></value>
+        </assignmentItems>
+    </assignments>
+
+    <assignments>
+        <name>Set_No_Policy</name>
+        <label>Set No ERA Policy</label>
+        <locationX>836</locationX>
+        <locationY>350</locationY>
+        <assignmentItems>
+            <assignToReference>IsValid</assignToReference>
+            <operator>Assign</operator>
+            <value><booleanValue>false</booleanValue></value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>ProductTier</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>Not Found</stringValue></value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>ValidationMessage</assignToReference>
+            <operator>Assign</operator>
+            <value><stringValue>No active ERA policy for this member. Verify coverage before proceeding.</stringValue></value>
+        </assignmentItems>
+    </assignments>
+
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Account</targetReference>
+        </connector>
+    </start>
+</Flow>
