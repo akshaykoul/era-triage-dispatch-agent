@@ -3,6 +3,8 @@
     <apiVersion>62.0</apiVersion>
     <isExposed>true</isExposed>
     <targets>
-        <target>lightning__AgentConversation</target>
+        <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
+        <target>lightning__UtilityBar</target>
     </targets>
 </LightningComponentBundle>
