@@ -1,0 +1,24 @@
+<template>
+    <div class="slds-grid slds-wrap slds-gutters_small slds-p-around_small">
+        <template for:each={hotels} for:item="hotel">
+            <div key={hotel.id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-card slds-p-around_small" style="border:1px solid #dddbda;border-radius:6px;">
+                    <p class="slds-text-heading_small">{hotel.name}</p>
+                    <p class="slds-text-body_small">{hotel.address}</p>
+                    <p class="slds-m-top_xx-small"><b>${hotel.rate}/night</b> · {hotel.distance}km away</p>
+                    <template if:false={hotel.booking}>
+                        <button class="slds-button slds-button_brand slds-m-top_small" data-id={hotel.id} onclick={handleBook}>Book</button>
+                    </template>
+                    <template if:true={hotel.booking}>
+                        <div class="slds-m-top_small">
+                            <lightning-input type="date" label="Check In" data-id={hotel.id} data-field="checkIn" onchange={handleDateChange}></lightning-input>
+                            <lightning-input type="date" label="Check Out" data-id={hotel.id} data-field="checkOut" onchange={handleDateChange}></lightning-input>
+                            <lightning-input type="number" label="Rooms" value="1" min="1" max="5" data-id={hotel.id} data-field="rooms" onchange={handleDateChange}></lightning-input>
+                            <button class="slds-button slds-button_success slds-m-top_small" data-id={hotel.id} onclick={handleConfirmBooking}>Confirm Booking</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

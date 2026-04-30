@@ -1,0 +1,26 @@
+<template>
+    <div class="slds-card slds-p-around_small era-tracker">
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">Call Progress</h3>
+
+        <template if:true={capturedFields.length}>
+            <p class="slds-text-body_small slds-m-bottom_xx-small" style="color:#2e7d32;font-weight:bold;">✓ Captured</p>
+            <template for:each={capturedFields} for:item="f">
+                <div key={f.label} class="slds-badge slds-m-right_xx-small slds-m-bottom_xx-small" style="background:#e8f5e9;color:#2e7d32;">{f.label}: {f.value}</div>
+            </template>
+        </template>
+
+        <template if:true={pendingFields.length}>
+            <p class="slds-text-body_small slds-m-top_x-small slds-m-bottom_xx-small" style="color:#e65100;font-weight:bold;">⏳ Pending</p>
+            <template for:each={pendingFields} for:item="f">
+                <div key={f.label} class="slds-badge slds-m-right_xx-small slds-m-bottom_xx-small" style="background:#fff3e0;color:#e65100;">{f.label}</div>
+            </template>
+        </template>
+
+        <template if:true={notCoveredFields.length}>
+            <p class="slds-text-body_small slds-m-top_x-small slds-m-bottom_xx-small" style="color:#c62828;font-weight:bold;">✗ Not Covered</p>
+            <template for:each={notCoveredFields} for:item="f">
+                <div key={f.label} class="slds-badge slds-m-right_xx-small slds-m-bottom_xx-small" style="background:#ffebee;color:#c62828;">{f.label}</div>
+            </template>
+        </template>
+    </div>
+</template>

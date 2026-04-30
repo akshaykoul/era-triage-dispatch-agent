@@ -1,0 +1,15 @@
+<template>
+    <div class="slds-grid slds-wrap slds-gutters_small slds-p-around_small">
+        <template for:each={faultTypes} for:item="ft">
+            <div key={ft.value} class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <button
+                    class={ft.cssClass}
+                    data-value={ft.value}
+                    onclick={handleSelect}
+                    style="width:100%;padding:8px;border-radius:6px;border:1px solid #dddbda;cursor:pointer;">
+                    {ft.label}
+                </button>
+            </div>
+        </template>
+    </div>
+</template>

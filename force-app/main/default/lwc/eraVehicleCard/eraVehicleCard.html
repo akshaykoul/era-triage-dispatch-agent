@@ -1,0 +1,16 @@
+<template>
+    <div class="slds-card slds-p-around_small">
+        <p class="slds-text-heading_small">Vehicle on File</p>
+        <div class="slds-grid slds-wrap slds-m-top_small">
+            <div class="slds-col slds-size_1-of-2"><b>Make:</b> {make}</div>
+            <div class="slds-col slds-size_1-of-2"><b>Model:</b> {model}</div>
+            <div class="slds-col slds-size_1-of-2"><b>Rego:</b> {registration}</div>
+            <div class="slds-col slds-size_1-of-2"><b>Type:</b> {vehicleType}</div>
+            <div class="slds-col slds-size_1-of-2"><b>Year:</b> {year}</div>
+        </div>
+        <div class="slds-m-top_small">
+            <button class="slds-button slds-button_brand slds-m-right_small" onclick={handleConfirm}>Confirm</button>
+            <button class="slds-button slds-button_neutral" onclick={handleDifferent}>Different Vehicle</button>
+        </div>
+    </div>
+</template>
